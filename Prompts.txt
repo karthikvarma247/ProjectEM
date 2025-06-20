@@ -1,4 +1,4 @@
-Below is **Prompt 1** designed to extract the necessary information for determining the **MDM Data Management Level** from a medical record, based on AMA guidelines. This prompt focuses on identifying key elements in the categories of **Lab Orders, Test Reviews, Independent Interpretations, External Data, and Independent Historian**:
+data_management_prompt = '''1** designed to extract the necessary information for determining the **MDM Data Management Level** from a medical record, based on AMA guidelines. This prompt focuses on identifying key elements in the categories of **Lab Orders, Test Reviews, Independent Interpretations, External Data, and Independent Historian**:
 
 ---
 
@@ -71,3 +71,182 @@ Return a **strict JSON object** with these keys:
 - **No scoring/analysis**: Only extract facts. Scoring happens in Prompt 2.  
 
 After running this prompt, feed the JSON output into **Prompt 2** (which contains AMA scoring rules) to determine the final MDM level for Data Management.
+
+'''
+
+data_evaluation_prompt= '''
+
+# AMA MDM COMPLEXITY DETERMINATION TABLE - IMPROVED PROMPT
+
+## CRITICAL EVALUATION RULES
+1. **STRICT CATEGORY REQUIREMENTS**: Each category has minimum thresholds that MUST be met exactly
+2. **NO PARTIAL CREDIT**: If minimum requirements aren't met, that category CANNOT be counted
+3. **HIERARCHICAL CLASSIFICATION**: Evaluate ALL levels, report ALL that qualify (High > Moderate > Low > Straightforward)
+4. **EXPLICIT DOCUMENTATION REQUIRED**: Only count what is explicitly documented, not implied
+
+---
+
+## COMPLEXITY LEVELS & REQUIREMENTS
+
+### STEP 1: HIGH COMPLEXITY (Extensive)
+**Requires ≥2 categories from the following 3:**
+
+**Category 1: Tests, Documents, or Independent Historian(s)**
+- **MINIMUM REQUIREMENT**: Must have ANY combination of **EXACTLY 3 OR MORE** from:
+  - Review of prior external note(s) from each unique source
+  - Review of the result(s) of each unique test
+  - Ordering of each unique test
+  - Assessment requiring an independent historian(s)
+- **⚠️ CRITICAL**: If fewer than 3 items are met, DO NOT count Category 1 at all
+
+**Category 2: Independent Interpretation**
+- Independent interpretation of tests performed by another physician/qualified healthcare professional (not separately reported)
+
+**Category 3: External Discussion**
+- Discussion of management or test interpretation with external physician/qualified healthcare professional/appropriate source (not separately reported)
+
+---
+
+### STEP 2: MODERATE COMPLEXITY
+**Requires ≥1 category from the following 3:**
+
+**Category 1: Tests, Documents, or Independent Historian(s)**
+- **MINIMUM REQUIREMENT**: Must have ANY combination of **EXACTLY 3 OR MORE** from:
+  - Review of prior external note(s) from each unique source
+  - Review of the result(s) of each unique test
+  - Ordering of each unique test
+  - Assessment requiring an independent historian(s)
+- **⚠️ CRITICAL**: If fewer than 3 items are met, DO NOT count Category 1 at all
+
+**Category 2: Independent Interpretation**
+- Independent interpretation of tests performed by another physician/qualified healthcare professional (not separately reported)
+
+**Category 3: External Discussion**
+- Discussion of management or test interpretation with external physician/qualified healthcare professional/appropriate source (not separately reported)
+
+---
+
+### STEP 3: LOW COMPLEXITY
+**Requires ≥1 category from the following 2:**
+
+**Category 1: Tests and Documents**
+- **MINIMUM REQUIREMENT**: Must have ANY combination of **EXACTLY 2 OR MORE** from:
+  - Review of prior external note(s) from each unique source
+  - Review of the result(s) of each unique test
+  - Ordering of each unique test
+- **⚠️ CRITICAL**: If fewer than 2 items are met, DO NOT count Category 1 at all
+
+**Category 2: Independent Historian**
+- Assessment requiring an independent historian(s)
+
+---
+
+### STEP 4: STRAIGHTFORWARD COMPLEXITY
+**Requires ANY ONE of the following:**
+- Review of prior external note(s) from each unique source
+- Review of the result(s) of each unique test
+- Ordering of each unique test
+- **OR** No data review/analysis documented
+
+---
+
+## EVALUATION PROTOCOL
+
+### Phase 1: Count Elements
+For each complexity level, systematically count:
+1. **External notes reviewed** (count unique sources only)
+2. **Test results reviewed** (count unique tests only)
+3. **Tests ordered** (count unique tests only)
+4. **Independent historian assessments**
+5. **Independent interpretations**
+6. **External discussions**
+
+### Phase 2: Apply Category Rules
+For each level, check if categories meet minimum thresholds:
+- **High/Moderate Category 1**: Needs ≥3 elements
+- **Low Category 1**: Needs ≥2 elements
+- **Straightforward**: Needs ≥1 element
+
+### Phase 3: Determine Qualifying Levels
+- Count qualifying categories for each level
+- Apply minimum category requirements:
+  - **High**: ≥2 categories
+  - **Moderate**: ≥1 category
+  - **Low**: ≥1 category
+  - **Straightforward**: Any single element OR no documentation
+
+### Phase 4: Report All Qualifying Levels
+List ALL levels that meet requirements, with highest level first.
+
+---
+
+## VALIDATION CHECKLIST
+- [ ] Distinct sources verified (no duplicates counted)
+- [ ] Minimum thresholds strictly enforced
+- [ ] Only explicitly documented items counted
+- [ ] All qualifying levels identified
+- [ ] Proper justification provided for each level
+
+---
+
+## EDGE CASE PROTOCOLS
+
+### Duplicate Handling
+- Same test multiple times → Count as 1 unique test
+- Same external source multiple times → Count as 1 unique source
+
+### Documentation Requirements
+- "Reviewed outside records" → Requires specific source identification
+- "Lab results reviewed" → Must specify which tests
+- Implied review without explicit statement → Do not count
+
+---
+
+## REQUIRED OUTPUT FORMAT
+
+```json
+{
+  "qualifying_levels": [
+    {
+      "level": "High Complexity",
+      "qualified": true,
+      "categories_met": 2,
+      "categories_required": 2,
+      "category_details": {
+        "category_1": {
+          "qualified": true,
+          "elements_found": 4,
+          "elements_required": 3,
+          "elements": [
+            "Review of prior external notes: 2 unique sources",
+            "Review of test results: 1 unique test", 
+            "Tests ordered: 1 unique test"
+          ]
+        },
+        "category_2": {
+          "qualified": true,
+          "elements": ["Independent interpretation of external EKG"]
+        }
+      },
+      "justification": "Patient case involves review of external cardiology notes and ED records (2 sources), CBC results reviewed, chest X-ray ordered, plus independent EKG interpretation.",
+      "supporting_documentation": "As documented in Assessment & Plan section"
+    }
+  ],
+  "elements_inventory": {
+    "external_notes_reviewed": 2,
+    "test_results_reviewed": 1,
+    "tests_ordered": 1,
+    "independent_historian": 0,
+    "independent_interpretations": 1,
+    "external_discussions": 0
+  }
+}
+```
+
+## CRITICAL REMINDERS
+1. **NO PARTIAL CREDIT**: 2 out of 3 required elements = Category 1 DOES NOT QUALIFY
+2. **COUNT ALL LEVELS**: A case can qualify for multiple levels simultaneously
+3. **EXPLICIT DOCUMENTATION ONLY**: "Patient had prior workup" ≠ "Reviewed external cardiology note from Dr. Smith dated 1/15/24"
+4. **UNIQUE SOURCES/TESTS ONLY**: Multiple CBCs = 1 test type
+
+'''
