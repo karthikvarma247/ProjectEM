@@ -204,49 +204,66 @@ List ALL levels that meet requirements, with highest level first.
 
 ## REQUIRED OUTPUT FORMAT
 
+**⚠️ CRITICAL**: Output MUST use EXACTLY this JSON format without any modifications:
+
 ```json
-{
-  "qualifying_levels": [
-    {
-      "level": "High Complexity",
-      "qualified": true,
-      "categories_met": 2,
-      "categories_required": 2,
-      "category_details": {
-        "category_1": {
-          "qualified": true,
-          "elements_found": 4,
-          "elements_required": 3,
-          "elements": [
-            "Review of prior external notes: 2 unique sources",
-            "Review of test results: 1 unique test", 
-            "Tests ordered: 1 unique test"
-          ]
-        },
-        "category_2": {
-          "qualified": true,
-          "elements": ["Independent interpretation of external EKG"]
-        }
-      },
-      "justification": "Patient case involves review of external cardiology notes and ED records (2 sources), CBC results reviewed, chest X-ray ordered, plus independent EKG interpretation.",
-      "supporting_documentation": "As documented in Assessment & Plan section"
+"Data Review Complexity": [
+  {
+    "id": "data-high-1",
+    "checked": true,
+    "AMA_reference": "High Complexity - Category 1 & Category 2 met",
+    "justification": "Patient presents with acute decompensated heart failure with EF decreased from 40% to 25% indicating severe exacerbation, requiring immediate intervention with IV diuretics. Met Category 1 (3+ elements: reviewed 2 external notes, 1 test result, ordered 1 test) and Category 2 (independent EKG interpretation).",
+    "reference": {
+      "source": "Assessment & Plan",
+      "text": "Patient presents with worsening heart failure symptoms, EF decreased from 40% to 25%"
     }
-  ],
-  "elements_inventory": {
-    "external_notes_reviewed": 2,
-    "test_results_reviewed": 1,
-    "tests_ordered": 1,
-    "independent_historian": 0,
-    "independent_interpretations": 1,
-    "external_discussions": 0
+  },
+  {
+    "id": "data-moderate-1", 
+    "checked": true,
+    "AMA_reference": "Moderate Complexity - Category 1 met",
+    "justification": "Same case qualifies for Moderate (requires ≥1 category): Category 1 met with 4 elements (2 external notes reviewed, 1 test result reviewed, 1 test ordered).",
+    "reference": {
+      "source": "Historical Diagnoses", 
+      "text": "CKD stage 4 noted with stable creatinine trends, Cr increased from 2.1 to 3.8 mg/dL over the past year."
+    }
+  },
+  {
+    "id": "data-low-1",
+    "checked": false,
+    "AMA_reference": "Low Complexity - Not applicable", 
+    "justification": "Higher complexity levels already met.",
+    "reference": {
+      "source": "",
+      "text": ""
+    }
+  },
+  {
+    "id": "data-straightforward-1",
+    "checked": false,
+    "AMA_reference": "Straightforward - Not applicable",
+    "justification": "Higher complexity levels already met.", 
+    "reference": {
+      "source": "",
+      "text": ""
+    }
   }
-}
+]
 ```
+
+## OUTPUT GENERATION RULES
+
+1. **Always include all 4 complexity levels** in the array (High, Moderate, Low, Straightforward)
+2. **Set "checked": true** for ALL levels that meet requirements 
+3. **Set "checked": false** for levels that don't qualify
+4. **Use sequential IDs**: data-high-1, data-moderate-1, data-low-1, data-straightforward-1
+5. **AMA_reference field**: Briefly state which categories were met or why not applicable
+6. **Justification field**: Provide detailed explanation with specific element counts
+7. **Reference fields**: Use actual documentation source and relevant text excerpt
 
 ## CRITICAL REMINDERS
 1. **NO PARTIAL CREDIT**: 2 out of 3 required elements = Category 1 DOES NOT QUALIFY
 2. **COUNT ALL LEVELS**: A case can qualify for multiple levels simultaneously
 3. **EXPLICIT DOCUMENTATION ONLY**: "Patient had prior workup" ≠ "Reviewed external cardiology note from Dr. Smith dated 1/15/24"
 4. **UNIQUE SOURCES/TESTS ONLY**: Multiple CBCs = 1 test type
-
 '''
