@@ -1,0 +1,73 @@
+Below is **Prompt 1** designed to extract the necessary information for determining the **MDM Data Management Level** from a medical record, based on AMA guidelines. This prompt focuses on identifying key elements in the categories of **Lab Orders, Test Reviews, Independent Interpretations, External Data, and Independent Historian**:
+
+---
+
+### **Prompt 1: Information Extraction for MDM Data Management**
+**Role**: You are a medical coding expert analyzing a patient's medical record to extract specific details for MDM level calculation under AMA guidelines.  
+**Task**: Identify and list ONLY the following elements from the medical record:  
+
+#### **1. Lab Orders Placed**  
+- **Definition**: Tests ordered during the encounter (e.g., blood tests, imaging).  
+- **Extract**: List each **unique test ordered** (e.g., "CBC," "Lipid Panel," "CT Chest").  
+- **Note**: Ignore duplicates (e.g., 2x CBC = 1 unique test).  
+
+#### **2. Results Reviewed**  
+- **Definition**: Results of tests **reviewed** during the encounter (e.g., lab results, precision tests, imaging reports).  
+- **Extract**: List each **unique test reviewed** (e.g., "Genetic Test BRCA1," "COVID-19 PCR Result").  
+
+#### **3. Independent Interpretations**  
+- **Definition**: Tests where the provider **personally analyzed raw data** (e.g., EKG tracings, biopsy slides) instead of relying solely on another clinician's report.  
+- **Extract**: List tests with **explicit documentation** of independent interpretation (e.g., "I reviewed the MRI images myself").  
+
+#### **4. External Data Reviewed**  
+- **Definition**: Data obtained from **external sources** (e.g., records from another hospital, specialist consult notes).  
+- **Extract**: List each **unique external source** (e.g., "Dr. Smith's Cardiology Report," "ABC Lab Records").  
+
+#### **5. Independent Historian**  
+- **Definition**: History obtained from a **non-family/caregiver source** (e.g., paramedic, social worker) due to patient incapacity.  
+- **Extract**: State `true` if present (with role, e.g., "EMT history"), else `false`.  
+
+---
+
+### **Output Format Requirements**  
+Return a **strict JSON object** with these keys:  
+```json
+{
+  "lab_orders_placed": ["test1", "test2", ...],
+  "results_reviewed": ["test1", "test2", ...],
+  "independent_interpretations": ["test1", "test2", ...],
+  "external_data_reviewed": ["source1", "source2", ...],
+  "independent_historian": "true/false with role (if true)"
+}
+```  
+
+### **Medical Record Input**  
+```  
+[Insert patient's medical record text here]  
+```  
+
+---
+
+### **Example**  
+**Medical Record Snippet**:  
+> "Ordered CBC and liver enzymes. Reviewed prior genetic test (OncoType DX) and chest X-ray from City Hospital. Interpreted EKG strips directly. History obtained from EMS due to patient confusion."  
+
+**Output**:  
+```json
+{
+  "lab_orders_placed": ["CBC", "Liver Enzymes"],
+  "results_reviewed": ["OncoType DX", "Chest X-ray"],
+  "independent_interpretations": ["EKG Strips"],
+  "external_data_reviewed": ["City Hospital Records"],
+  "independent_historian": "true (EMS)"
+}
+```
+
+---
+
+### **Key Instructions**  
+- **Be specific**: Use exact test/source names from the record.  
+- **Exclude non-relevant data**: Ignore HPI, Assessment/Plan, or non-test-related notes.  
+- **No scoring/analysis**: Only extract facts. Scoring happens in Prompt 2.  
+
+After running this prompt, feed the JSON output into **Prompt 2** (which contains AMA scoring rules) to determine the final MDM level for Data Management.
