@@ -448,10 +448,50 @@ Data_evaluation_prompt_4= '''
 # AMA MDM COMPLEXITY DETERMINATION TABLE - IMPROVED PROMPT
 
 ## CRITICAL EVALUATION RULES
-1. **STRICT CATEGORY REQUIREMENTS**: Each category has minimum thresholds that MUST be met exactly
-2. **NO PARTIAL CREDIT**: If minimum requirements aren't met, that category CANNOT be counted
-3. **HIERARCHICAL CLASSIFICATION**: Evaluate ALL levels, report ALL that qualify (High > Moderate > Low > Straightforward)
-4. **EXPLICIT DOCUMENTATION REQUIRED**: Only count what is explicitly documented, not implied
+1. **BINARY ELEMENT COUNTING**: Each Category 1 component is either Present (1) or Absent (0)
+2. **NO QUANTITY ADDITION**: Never add up quantities - only count types present
+3. **STRICT THRESHOLD ENFORCEMENT**: If minimum requirements aren't met exactly, category is completely disqualified
+4. **EXPLICIT DOCUMENTATION REQUIRED**: Only count what is explicitly documented
+
+## ELEMENT COUNTING FORMULA
+
+### For Category 1 (High/Moderate):
+```
+Element 1: External notes reviewed → IF count ≥ 1 THEN 1 ELSE 0
+Element 2: Test results reviewed → IF count ≥ 1 THEN 1 ELSE 0  
+Element 3: Tests ordered → IF count ≥ 1 THEN 1 ELSE 0
+Element 4: Independent historian → IF present THEN 1 ELSE 0
+
+TOTAL ELEMENTS = Element 1 + Element 2 + Element 3 + Element 4
+Category 1 Qualifies ONLY IF: TOTAL ELEMENTS ≥ 3
+```
+
+### For Category 1 (Low):
+```
+Element 1: External notes reviewed → IF count ≥ 1 THEN 1 ELSE 0
+Element 2: Test results reviewed → IF count ≥ 1 THEN 1 ELSE 0  
+Element 3: Tests ordered → IF count ≥ 1 THEN 1 ELSE 0
+
+TOTAL ELEMENTS = Element 1 + Element 2 + Element 3
+Category 1 Qualifies ONLY IF: TOTAL ELEMENTS ≥ 2
+```
+
+## WORKED EXAMPLE
+**Input Data:**
+- Test results reviewed: 4 tests
+- Tests ordered: 3 tests  
+- External notes: 0
+- Independent historian: No
+
+**Evaluation:**
+- Element 1 (External notes): 0 ≥ 1? → **NO = 0**
+- Element 2 (Test results): 4 ≥ 1? → **YES = 1** 
+- Element 3 (Tests ordered): 3 ≥ 1? → **YES = 1**
+- Element 4 (Historian): Present? → **NO = 0**
+
+**Category 1 Total: 0 + 1 + 1 + 0 = 2 elements**
+**High/Moderate Threshold: 2 < 3 → CATEGORY 1 FAILS**
+**Low Threshold: 2 ≥ 2 → CATEGORY 1 PASSES for Low only**
 
 ---
 
@@ -524,40 +564,45 @@ Data_evaluation_prompt_4= '''
 
 ## EVALUATION PROTOCOL
 
-### Phase 1: Count Elements
-For each complexity level, systematically evaluate:
-1. **External notes reviewed**: Present (≥1) = 1 element | Absent (0) = 0 elements
-2. **Test results reviewed**: Present (≥1) = 1 element | Absent (0) = 0 elements  
-3. **Tests ordered**: Present (≥1) = 1 element | Absent (0) = 0 elements
-4. **Independent historian**: Present = 1 element | Absent = 0 elements
-5. **Independent interpretations**: Present (≥1) = 1 element | Absent = 0 elements
-6. **External discussions**: Present (≥1) = 1 element | Absent = 0 elements
+## EVALUATION PROTOCOL
 
-### Phase 2: Apply Category Rules
-For each level, check if categories meet minimum thresholds:
-- **High/Moderate Category 1**: Needs ≥3 elements from 4 possible (external notes, test results, tests ordered, historian)
-- **Low Category 1**: Needs ≥2 elements from 3 possible (external notes, test results, tests ordered)
-- **All Category 2**: Needs ≥1 independent interpretation
-- **All Category 3**: Needs ≥1 external discussion
+### Phase 1: Extract Raw Counts
+From the input data, identify:
+1. **Test results reviewed count** (e.g., 4)
+2. **Tests ordered count** (e.g., 3)
+3. **External notes reviewed count** (e.g., 0)
+4. **Independent historian present** (true/false)
+5. **Independent interpretations count** (e.g., 1)
+6. **External discussions count** (e.g., 0)
 
-**EXAMPLE EVALUATION:**
-Input: 4 test results reviewed, 3 tests ordered, 0 external notes, 0 historian
-- Test results reviewed: 4 tests → **1 element** ✓
-- Tests ordered: 3 tests → **1 element** ✓  
-- External notes: 0 → **0 elements** ✗
-- Independent historian: No → **0 elements** ✗
-- **Category 1 total: 2 elements < 3 required → Category 1 FAILS**
+### Phase 2: Convert to Binary Elements
+Apply the binary conversion formula:
+- **External notes element**: Count ≥ 1 → 1, else 0
+- **Test results element**: Count ≥ 1 → 1, else 0
+- **Tests ordered element**: Count ≥ 1 → 1, else 0
+- **Independent historian element**: Present → 1, else 0
+- **Independent interpretations element**: Count ≥ 1 → 1, else 0
+- **External discussions element**: Count ≥ 1 → 1, else 0
 
-### Phase 3: Determine Qualifying Levels
-- Count qualifying categories for each level
-- Apply minimum category requirements:
-  - **High**: ≥2 categories
-  - **Moderate**: ≥1 category
-  - **Low**: ≥1 category
-  - **Straightforward**: Any single element OR no documentation
+### Phase 3: Evaluate Each Complexity Level
+For each level, sum the relevant binary elements and compare to thresholds:
 
-### Phase 4: Report All Qualifying Levels
-List ALL levels that meet requirements, with highest level first.
+**HIGH COMPLEXITY**: Requires ≥2 categories
+- Category 1: (External notes + Test results + Tests ordered + Historian) ≥ 3?
+- Category 2: Independent interpretations ≥ 1?
+- Category 3: External discussions ≥ 1?
+
+**MODERATE COMPLEXITY**: Requires ≥1 category  
+- Category 1: (External notes + Test results + Tests ordered + Historian) ≥ 3?
+- Category 2: Independent interpretations ≥ 1?
+- Category 3: External discussions ≥ 1?
+
+**LOW COMPLEXITY**: Requires ≥1 category
+- Category 1: (External notes + Test results + Tests ordered) ≥ 2?
+- Category 2: Independent historian ≥ 1?
+
+### Phase 4: Report Results
+Set "checked": true for ALL levels that meet their requirements.
 
 ---
 
@@ -642,10 +687,53 @@ List ALL levels that meet requirements, with highest level first.
 6. **Justification field**: Provide detailed explanation with specific element counts
 7. **Reference fields**: Use actual documentation source and relevant text excerpt
 
-## CRITICAL REMINDERS
-1. **NO PARTIAL CREDIT**: 2 out of 3 required elements = Category 1 DOES NOT QUALIFY
-2. **COUNT ALL LEVELS**: A case can qualify for multiple levels simultaneously
-3. **EXPLICIT DOCUMENTATION ONLY**: "Patient had prior workup" ≠ "Reviewed external cardiology note from Dr. Smith dated 1/15/24"
-4. **UNIQUE SOURCES/TESTS ONLY**: Multiple CBCs = 1 test type
+## CORRECTION EXAMPLE FOR YOUR CASE
+
+**Input Data:**
+- Test results reviewed: 4 (Comprehensive Metabolic Panel, Lipid Panel, CBC W/DIFFERENTIAL, Hemoglobin A1c)
+- Tests ordered: 3 (CBC W/ AUTO DIFF, Comprehensive Metabolic Panel, US Abdomen Limited)
+- External notes: 0
+- Independent historian: No
+- Independent interpretations: 1 (US Abdomen Limited)
+- External discussions: 0
+
+**CORRECT EVALUATION:**
+
+**Step 1: Convert to Binary Elements**
+- External notes: 0 ≥ 1? → **0**
+- Test results: 4 ≥ 1? → **1**
+- Tests ordered: 3 ≥ 1? → **1**
+- Independent historian: No → **0**
+- Independent interpretations: 1 ≥ 1? → **1**
+- External discussions: 0 ≥ 1? → **0**
+
+**Step 2: Evaluate Categories**
+- **High/Moderate Category 1**: (0 + 1 + 1 + 0) = 2 < 3 → **FAILS**
+- **High/Moderate Category 2**: 1 ≥ 1 → **PASSES**
+- **High/Moderate Category 3**: 0 ≥ 1 → **FAILS**
+
+**Step 3: Determine Complexity**
+- **HIGH**: Needs ≥2 categories → Only 1 category passes → **FAILS**
+- **MODERATE**: Needs ≥1 category → 1 category passes → **PASSES**
+- **LOW Category 1**: (0 + 1 + 1) = 2 ≥ 2 → **PASSES**
+- **LOW**: Needs ≥1 category → 1 category passes → **PASSES**
+
+**CORRECT OUTPUT:**
+```json
+{
+  "id": "data-high-1",
+  "checked": false,
+  "AMA_reference": "High Complexity - Not met",
+  "justification": "Category 1 failed (only 2/3 elements: test results + tests ordered, missing external notes/historian). Category 2 met but need ≥2 categories for High.",
+  "reference": {"source": "", "text": ""}
+},
+{
+  "id": "data-moderate-1", 
+  "checked": true,
+  "AMA_reference": "Moderate Complexity - Category 2 met",
+  "justification": "Category 2 met with independent interpretation of US Abdomen Limited. Only needs 1 category for Moderate.",
+  "reference": {"source": "Lab Orders & Results", "text": "US Abdomen Limited independently interpreted"}
+}
+```
 
 '''
