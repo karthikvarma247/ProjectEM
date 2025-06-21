@@ -1,0 +1,479 @@
+data_review = '''
+
+# MDM Data Extraction for Complexity Determination
+
+**Role**: You are a medical coding expert extracting specific data elements from medical records for MDM complexity calculation.
+
+**Task**: Extract ONLY the binary presence/absence of each element type needed for MDM evaluation.
+
+---
+
+## **EXTRACTION ELEMENTS**
+
+### **1. Tests Ordered During Encounter**
+* **Definition**: Any diagnostic tests ordered during this encounter
+* **Extract**: List unique tests ordered with section reference
+* **Count Logic**: Present if ≥1 unique test ordered
+
+### **2. Test Results Reviewed**
+* **Definition**: Results of tests reviewed during encounter (current or historical)
+* **Extract**: List unique test results reviewed with section reference
+* **Count Logic**: Present if ≥1 unique test result reviewed
+
+### **3. External Records Reviewed**
+* **Definition**: Records/notes from external sources (other facilities, providers)
+* **Extract**: List unique external sources reviewed with section reference
+* **Count Logic**: Present if ≥1 unique external source reviewed
+
+### **4. Independent Historian**
+* **Definition**: History obtained from family/caregiver due to patient inability
+* **Extract**: Document presence and source
+* **Count Logic**: Present if explicitly documented
+
+### **5. Independent Interpretations**
+* **Definition**: Provider personally analyzed raw data (not just reviewed reports)
+* **Extract**: List tests with documented independent interpretation
+* **Count Logic**: Present if ≥1 test independently interpreted
+
+### **6. External Discussions**
+* **Definition**: Discussion with external physicians/healthcare professionals about management/interpretation
+* **Extract**: List discussions with external providers
+* **Count Logic**: Present if ≥1 external discussion documented
+
+---
+
+## **OUTPUT FORMAT**
+
+Return this exact JSON structure:
+
+```json
+{
+  "mdm_data_elements": {
+    "tests_ordered": {
+      "present": true/false,
+      "items": ["Test 1", "Test 2"],
+      "count": 2,
+      "extraction_points": [
+        {
+          "section": "Assessment and Plan",
+          "text": "Will order CBC and CMP to evaluate"
+        }
+      ]
+    },
+    "test_results_reviewed": {
+      "present": true/false,
+      "items": ["Result 1", "Result 2"],
+      "count": 2,
+      "extraction_points": [
+        {
+          "section": "Review of Systems",
+          "text": "Reviewed today's CBC showing WBC 12.5"
+        }
+      ]
+    },
+    "external_records_reviewed": {
+      "present": true/false,
+      "items": ["Source 1", "Source 2"],
+      "count": 2,
+      "extraction_points": [
+        {
+          "section": "History of Present Illness",
+          "text": "Reviewed City Hospital discharge summary from 01/15"
+        }
+      ]
+    },
+    "independent_historian": {
+      "present": true/false,
+      "source": "EMS/Family/Caregiver",
+      "extraction_points": [
+        {
+          "section": "History of Present Illness",
+          "text": "History obtained from EMS due to patient altered mental status"
+        }
+      ]
+    },
+    "independent_interpretations": {
+      "present": true/false,
+      "items": ["Test 1", "Test 2"],
+      "count": 2,
+      "extraction_points": [
+        {
+          "section": "Assessment and Plan",
+          "text": "Reviewed EKG tracings directly, shows ST elevation"
+        }
+      ]
+    },
+    "external_discussions": {
+      "present": true/false,
+      "items": ["Discussion 1", "Discussion 2"],
+      "count": 2,
+      "extraction_points": [
+        {
+          "section": "Assessment and Plan",
+          "text": "Discussed case with Dr. Smith (cardiology) regarding treatment options"
+        }
+      ]
+    }
+  },
+  "binary_summary": {
+    "tests_ordered_element": 1,
+    "test_results_element": 1,
+    "external_records_element": 0,
+    "independent_historian_element": 1,
+    "independent_interpretations_element": 1,
+    "external_discussions_element": 0
+  }
+}
+```
+
+---
+
+## **CRITICAL EXTRACTION RULES**
+
+1. **Unique Items Only**: Count each distinct test/source only once
+2. **Explicit Documentation Required**: Only extract what is clearly stated
+3. **Section Attribution**: Always identify the medical record section where information was found
+4. **Text Evidence**: Include exact text that supports the extraction
+5. **Binary Logic**: Focus on presence/absence, not quantities
+
+---
+
+## **EXAMPLE**
+
+**Medical Record**:
+```
+HISTORY OF PRESENT ILLNESS:
+Patient reports chest pain. History obtained from wife due to patient confusion. Reviewed prior cardiac catheterization report from St. Mary's Hospital.
+
+ASSESSMENT AND PLAN:
+Will order troponin and ECG. Today's CBC shows WBC 15.2. Interpreted ECG myself showing ST changes. Discussed with Dr. Johnson (cardiology) about next steps.
+```
+
+**Output**:
+```json
+{
+  "mdm_data_elements": {
+    "tests_ordered": {
+      "present": true,
+      "items": ["Troponin", "ECG"],
+      "count": 2,
+      "extraction_points": [
+        {
+          "section": "Assessment and Plan",
+          "text": "Will order troponin and ECG"
+        }
+      ]
+    },
+    "test_results_reviewed": {
+      "present": true,
+      "items": ["CBC"],
+      "count": 1,
+      "extraction_points": [
+        {
+          "section": "Assessment and Plan", 
+          "text": "Today's CBC shows WBC 15.2"
+        }
+      ]
+    },
+    "external_records_reviewed": {
+      "present": true,
+      "items": ["St. Mary's Hospital cardiac catheterization"],
+      "count": 1,
+      "extraction_points": [
+        {
+          "section": "History of Present Illness",
+          "text": "Reviewed prior cardiac catheterization report from St. Mary's Hospital"
+        }
+      ]
+    },
+    "independent_historian": {
+      "present": true,
+      "source": "Wife",
+      "extraction_points": [
+        {
+          "section": "History of Present Illness",
+          "text": "History obtained from wife due to patient confusion"
+        }
+      ]
+    },
+    "independent_interpretations": {
+      "present": true,
+      "items": ["ECG"],
+      "count": 1,
+      "extraction_points": [
+        {
+          "section": "Assessment and Plan",
+          "text": "Interpreted ECG myself showing ST changes"
+        }
+      ]
+    },
+    "external_discussions": {
+      "present": true,
+      "items": ["Dr. Johnson cardiology consultation"],
+      "count": 1,
+      "extraction_points": [
+        {
+          "section": "Assessment and Plan",
+          "text": "Discussed with Dr. Johnson (cardiology) about next steps"
+        }
+      ]
+    }
+  },
+  "binary_summary": {
+    "tests_ordered_element": 1,
+    "test_results_element": 1,
+    "external_records_element": 1,
+    "independent_historian_element": 1,
+    "independent_interpretations_element": 1,
+    "external_discussions_element": 1
+  }
+}
+```
+
+---
+
+## **KEY IMPROVEMENTS**
+
+1. **Simplified Focus**: Only extracts what's needed for binary evaluation
+2. **Section Attribution**: Always identifies where information was found
+3. **Text Evidence**: Provides exact supporting text for verification
+4. **Binary Summary**: Pre-calculates the 0/1 values needed for complexity determination
+5. **Reduced Complexity**: Eliminates unnecessary granular details that confused the evaluation
+'''
+
+
+
+data_evaluation = '''
+
+# MDM Complexity Determination - Simplified Evaluation
+
+**Role**: Determine MDM complexity level based on extracted data elements using AMA guidelines.
+
+**Input**: Use the `binary_summary` from the extraction prompt output.
+
+---
+
+## **BINARY ELEMENT EVALUATION**
+
+### **Input Elements**
+From extraction output, use these binary values (0 or 1):
+- `tests_ordered_element`: 1 if any tests ordered, 0 if none
+- `test_results_element`: 1 if any results reviewed, 0 if none  
+- `external_records_element`: 1 if any external records reviewed, 0 if none
+- `independent_historian_element`: 1 if historian present, 0 if absent
+- `independent_interpretations_element`: 1 if any independent interpretations, 0 if none
+- `external_discussions_element`: 1 if any external discussions, 0 if none
+
+---
+
+## **COMPLEXITY LEVEL REQUIREMENTS**
+
+### **HIGH COMPLEXITY (Extensive)**
+**Requirement**: Must qualify for ≥2 of these 3 categories:
+
+**Category 1**: Data Analysis
+- **Formula**: `tests_ordered_element + test_results_element + external_records_element + independent_historian_element`
+- **Threshold**: ≥3
+- **Qualifies**: Yes if sum ≥3, No if sum <3
+
+**Category 2**: Independent Interpretation  
+- **Formula**: `independent_interpretations_element`
+- **Threshold**: ≥1
+- **Qualifies**: Yes if =1, No if =0
+
+**Category 3**: External Discussion
+- **Formula**: `external_discussions_element` 
+- **Threshold**: ≥1
+- **Qualifies**: Yes if =1, No if =0
+
+---
+
+### **MODERATE COMPLEXITY**
+**Requirement**: Must qualify for ≥1 of these 3 categories:
+- Same Category 1, 2, 3 as High Complexity above
+
+---
+
+### **LOW COMPLEXITY**
+**Requirement**: Must qualify for ≥1 of these 2 categories:
+
+**Category 1**: Data Analysis (Reduced)
+- **Formula**: `tests_ordered_element + test_results_element + external_records_element`
+- **Threshold**: ≥2
+- **Qualifies**: Yes if sum ≥2, No if sum <2
+
+**Category 2**: Independent Historian
+- **Formula**: `independent_historian_element`
+- **Threshold**: ≥1  
+- **Qualifies**: Yes if =1, No if =0
+
+---
+
+### **STRAIGHTFORWARD COMPLEXITY**
+**Requirement**: Any ONE element present OR no data documented
+- Qualifies if any element = 1, or all elements = 0
+
+---
+
+## **EVALUATION STEPS**
+
+### **Step 1: Calculate Category Totals**
+```
+Category 1 (Full): tests_ordered + test_results + external_records + independent_historian
+Category 2: independent_interpretations  
+Category 3: external_discussions
+Category 1 (Reduced): tests_ordered + test_results + external_records
+```
+
+### **Step 2: Determine Category Qualification**
+```
+High/Moderate Cat 1: Category 1 (Full) ≥ 3 → True/False
+High/Moderate Cat 2: Category 2 ≥ 1 → True/False  
+High/Moderate Cat 3: Category 3 ≥ 1 → True/False
+Low Cat 1: Category 1 (Reduced) ≥ 2 → True/False
+Low Cat 2: independent_historian ≥ 1 → True/False
+```
+
+### **Step 3: Apply Complexity Rules**
+```
+High: Count(Qualified High/Moderate Categories) ≥ 2 → True/False
+Moderate: Count(Qualified High/Moderate Categories) ≥ 1 → True/False
+Low: Count(Qualified Low Categories) ≥ 1 → True/False
+Straightforward: Any element present OR all elements absent → True/False
+```
+
+---
+
+## **WORKED EXAMPLE**
+
+**Input Binary Summary**:
+```json
+{
+  "tests_ordered_element": 1,
+  "test_results_element": 1, 
+  "external_records_element": 0,
+  "independent_historian_element": 0,
+  "independent_interpretations_element": 1,
+  "external_discussions_element": 0
+}
+```
+
+**Step 1: Calculate Totals**
+- Category 1 (Full): 1 + 1 + 0 + 0 = 2
+- Category 2: 1
+- Category 3: 0  
+- Category 1 (Reduced): 1 + 1 + 0 = 2
+
+**Step 2: Category Qualification**
+- High/Moderate Cat 1: 2 ≥ 3 → **False**
+- High/Moderate Cat 2: 1 ≥ 1 → **True**
+- High/Moderate Cat 3: 0 ≥ 1 → **False**
+- Low Cat 1: 2 ≥ 2 → **True**
+- Low Cat 2: 0 ≥ 1 → **False**
+
+**Step 3: Apply Rules**
+- High: 1 qualified category ≥ 2 → **False**
+- Moderate: 1 qualified category ≥ 1 → **True**  
+- Low: 1 qualified category ≥ 1 → **True**
+- Straightforward: Elements present → **True**
+
+---
+
+## **OUTPUT FORMAT**
+
+```json
+{
+  "mdm_complexity_evaluation": {
+    "input_summary": {
+      "tests_ordered_element": 1,
+      "test_results_element": 1,
+      "external_records_element": 0, 
+      "independent_historian_element": 0,
+      "independent_interpretations_element": 1,
+      "external_discussions_element": 0
+    },
+    "category_calculations": {
+      "high_moderate_category_1": {
+        "formula": "1+1+0+0",
+        "total": 2,
+        "threshold": 3,
+        "qualifies": false
+      },
+      "high_moderate_category_2": {
+        "total": 1,
+        "threshold": 1, 
+        "qualifies": true
+      },
+      "high_moderate_category_3": {
+        "total": 0,
+        "threshold": 1,
+        "qualifies": false
+      },
+      "low_category_1": {
+        "formula": "1+1+0", 
+        "total": 2,
+        "threshold": 2,
+        "qualifies": true
+      },
+      "low_category_2": {
+        "total": 0,
+        "threshold": 1,
+        "qualifies": false
+      }
+    },
+    "complexity_results": [
+      {
+        "id": "data-high-1",
+        "checked": false,
+        "AMA_reference": "High Complexity - Not met (only 1/2 required categories)",
+        "justification": "Category 2 qualified (independent interpretation) but Category 1 failed (2/3 elements). Need ≥2 categories for High.",
+        "qualified_categories": 1,
+        "required_categories": 2
+      },
+      {
+        "id": "data-moderate-1", 
+        "checked": true,
+        "AMA_reference": "Moderate Complexity - Category 2 met",
+        "justification": "Category 2 qualified with independent interpretation. Only 1 category needed for Moderate.",
+        "qualified_categories": 1,
+        "required_categories": 1
+      },
+      {
+        "id": "data-low-1",
+        "checked": true, 
+        "AMA_reference": "Low Complexity - Category 1 met",
+        "justification": "Category 1 qualified (tests ordered + results reviewed = 2/2 elements). Only 1 category needed for Low.",
+        "qualified_categories": 1,
+        "required_categories": 1
+      },
+      {
+        "id": "data-straightforward-1",
+        "checked": true,
+        "AMA_reference": "Straightforward - Elements present",
+        "justification": "Data elements documented, qualifies for Straightforward minimum.",
+        "qualified_categories": "N/A",
+        "required_categories": "N/A"
+      }
+    ],
+    "final_determination": {
+      "highest_level": "Moderate",
+      "rationale": "Moderate is the highest level that qualifies with 1 qualifying category (independent interpretation)."
+    }
+  }
+}
+```
+
+---
+
+## **KEY IMPROVEMENTS**
+
+1. **Simplified Input**: Works directly with binary summary from extraction
+2. **Clear Formulas**: Explicit mathematical calculations for each category  
+3. **Step-by-Step Process**: Transparent evaluation methodology
+4. **All Levels Evaluated**: Shows which levels qualify and why
+5. **Detailed Justification**: Explains the mathematical reasoning for each determination
+6. **Final Determination**: Identifies the highest qualifying complexity level
+
+This approach eliminates confusion by using simple binary addition and clear threshold comparisons, making the MDM complexity determination both accurate and auditable.
+
+'''
