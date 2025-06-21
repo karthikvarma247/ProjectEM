@@ -441,3 +441,211 @@ Return a **strict JSON object** with these keys:
 
 
 '''
+
+
+Data_evaluation_prompt_4= '''
+
+# AMA MDM COMPLEXITY DETERMINATION TABLE - IMPROVED PROMPT
+
+## CRITICAL EVALUATION RULES
+1. **STRICT CATEGORY REQUIREMENTS**: Each category has minimum thresholds that MUST be met exactly
+2. **NO PARTIAL CREDIT**: If minimum requirements aren't met, that category CANNOT be counted
+3. **HIERARCHICAL CLASSIFICATION**: Evaluate ALL levels, report ALL that qualify (High > Moderate > Low > Straightforward)
+4. **EXPLICIT DOCUMENTATION REQUIRED**: Only count what is explicitly documented, not implied
+
+---
+
+## COMPLEXITY LEVELS & REQUIREMENTS
+
+### STEP 1: HIGH COMPLEXITY (Extensive)
+**Requires ≥2 categories from the following 3:**
+
+**Category 1: Tests, Documents, or Independent Historian(s)**
+- **MINIMUM REQUIREMENT**: Must have ANY combination of **EXACTLY 3 OR MORE** from:
+  - Review of prior external note(s) from each unique source *(COUNT: Yes/No - if ≥1 external sources)*
+  - Review of the result(s) of each unique test *(COUNT: Yes/No - if ≥1 test results reviewed)*
+  - Ordering of each unique test *(COUNT: Yes/No - if ≥1 tests ordered)*
+  - Assessment requiring an independent historian(s) *(COUNT: Yes/No - if historian present)*
+- **⚠️ CRITICAL**: Each bullet point above counts as **ONLY 1 ELEMENT** regardless of quantity
+- **⚠️ CRITICAL**: If fewer than 3 bullet points are met, DO NOT count Category 1 at all
+
+**Category 2: Independent Interpretation**
+- Independent interpretation of tests performed by another physician/qualified healthcare professional (not separately reported)
+
+**Category 3: External Discussion**
+- Discussion of management or test interpretation with external physician/qualified healthcare professional/appropriate source (not separately reported)
+
+---
+
+### STEP 2: MODERATE COMPLEXITY
+**Requires ≥1 category from the following 3:**
+
+**Category 1: Tests, Documents, or Independent Historian(s)**
+- **MINIMUM REQUIREMENT**: Must have ANY combination of **EXACTLY 3 OR MORE** from:
+  - Review of prior external note(s) from each unique source *(COUNT: Yes/No - if ≥1 external sources)*
+  - Review of the result(s) of each unique test *(COUNT: Yes/No - if ≥1 test results reviewed)*
+  - Ordering of each unique test *(COUNT: Yes/No - if ≥1 tests ordered)*
+  - Assessment requiring an independent historian(s) *(COUNT: Yes/No - if historian present)*
+- **⚠️ CRITICAL**: Each bullet point above counts as **ONLY 1 ELEMENT** regardless of quantity
+- **⚠️ CRITICAL**: If fewer than 3 bullet points are met, DO NOT count Category 1 at all
+
+**Category 2: Independent Interpretation**
+- Independent interpretation of tests performed by another physician/qualified healthcare professional (not separately reported)
+
+**Category 3: External Discussion**
+- Discussion of management or test interpretation with external physician/qualified healthcare professional/appropriate source (not separately reported)
+
+---
+
+### STEP 3: LOW COMPLEXITY
+**Requires ≥1 category from the following 2:**
+
+**Category 1: Tests and Documents**
+- **MINIMUM REQUIREMENT**: Must have ANY combination of **EXACTLY 2 OR MORE** from:
+  - Review of prior external note(s) from each unique source *(COUNT: Yes/No - if ≥1 external sources)*
+  - Review of the result(s) of each unique test *(COUNT: Yes/No - if ≥1 test results reviewed)*
+  - Ordering of each unique test *(COUNT: Yes/No - if ≥1 tests ordered)*
+- **⚠️ CRITICAL**: Each bullet point above counts as **ONLY 1 ELEMENT** regardless of quantity
+- **⚠️ CRITICAL**: If fewer than 2 bullet points are met, DO NOT count Category 1 at all
+
+**Category 2: Independent Historian**
+- Assessment requiring an independent historian(s)
+
+---
+
+### STEP 4: STRAIGHTFORWARD COMPLEXITY
+**Requires ANY ONE of the following:**
+- Review of prior external note(s) from each unique source
+- Review of the result(s) of each unique test
+- Ordering of each unique test
+- **OR** No data review/analysis documented
+
+---
+
+## EVALUATION PROTOCOL
+
+### Phase 1: Count Elements
+For each complexity level, systematically evaluate:
+1. **External notes reviewed**: Present (≥1) = 1 element | Absent (0) = 0 elements
+2. **Test results reviewed**: Present (≥1) = 1 element | Absent (0) = 0 elements  
+3. **Tests ordered**: Present (≥1) = 1 element | Absent (0) = 0 elements
+4. **Independent historian**: Present = 1 element | Absent = 0 elements
+5. **Independent interpretations**: Present (≥1) = 1 element | Absent = 0 elements
+6. **External discussions**: Present (≥1) = 1 element | Absent = 0 elements
+
+### Phase 2: Apply Category Rules
+For each level, check if categories meet minimum thresholds:
+- **High/Moderate Category 1**: Needs ≥3 elements from 4 possible (external notes, test results, tests ordered, historian)
+- **Low Category 1**: Needs ≥2 elements from 3 possible (external notes, test results, tests ordered)
+- **All Category 2**: Needs ≥1 independent interpretation
+- **All Category 3**: Needs ≥1 external discussion
+
+**EXAMPLE EVALUATION:**
+Input: 4 test results reviewed, 3 tests ordered, 0 external notes, 0 historian
+- Test results reviewed: 4 tests → **1 element** ✓
+- Tests ordered: 3 tests → **1 element** ✓  
+- External notes: 0 → **0 elements** ✗
+- Independent historian: No → **0 elements** ✗
+- **Category 1 total: 2 elements < 3 required → Category 1 FAILS**
+
+### Phase 3: Determine Qualifying Levels
+- Count qualifying categories for each level
+- Apply minimum category requirements:
+  - **High**: ≥2 categories
+  - **Moderate**: ≥1 category
+  - **Low**: ≥1 category
+  - **Straightforward**: Any single element OR no documentation
+
+### Phase 4: Report All Qualifying Levels
+List ALL levels that meet requirements, with highest level first.
+
+---
+
+## VALIDATION CHECKLIST
+- [ ] Distinct sources verified (no duplicates counted)
+- [ ] Minimum thresholds strictly enforced
+- [ ] Only explicitly documented items counted
+- [ ] All qualifying levels identified
+- [ ] Proper justification provided for each level
+
+---
+
+## EDGE CASE PROTOCOLS
+
+### Duplicate Handling
+- Same test multiple times → Count as 1 unique test
+- Same external source multiple times → Count as 1 unique source
+
+### Documentation Requirements
+- "Reviewed outside records" → Requires specific source identification
+- "Lab results reviewed" → Must specify which tests
+- Implied review without explicit statement → Do not count
+
+---
+
+## REQUIRED OUTPUT FORMAT
+
+**⚠️ CRITICAL**: Output MUST use EXACTLY this JSON format without any modifications:
+
+```json
+"Data Review Complexity": [
+  {
+    "id": "data-high-1",
+    "checked": true,
+    "AMA_reference": "High Complexity - Category 1 & Category 2 met",
+    "justification": "Patient presents with acute decompensated heart failure with EF decreased from 40% to 25% indicating severe exacerbation, requiring immediate intervention with IV diuretics. Met Category 1 (3+ elements: reviewed 2 external notes, 1 test result, ordered 1 test) and Category 2 (independent EKG interpretation).",
+    "reference": {
+      "source": "Assessment & Plan",
+      "text": "Patient presents with worsening heart failure symptoms, EF decreased from 40% to 25%"
+    }
+  },
+  {
+    "id": "data-moderate-1", 
+    "checked": true,
+    "AMA_reference": "Moderate Complexity - Category 1 met",
+    "justification": "Same case qualifies for Moderate (requires ≥1 category): Category 1 met with 4 elements (2 external notes reviewed, 1 test result reviewed, 1 test ordered).",
+    "reference": {
+      "source": "Historical Diagnoses", 
+      "text": "CKD stage 4 noted with stable creatinine trends, Cr increased from 2.1 to 3.8 mg/dL over the past year."
+    }
+  },
+  {
+    "id": "data-low-1",
+    "checked": false,
+    "AMA_reference": "Low Complexity - Not applicable", 
+    "justification": "Higher complexity levels already met.",
+    "reference": {
+      "source": "",
+      "text": ""
+    }
+  },
+  {
+    "id": "data-straightforward-1",
+    "checked": false,
+    "AMA_reference": "Straightforward - Not applicable",
+    "justification": "Higher complexity levels already met.", 
+    "reference": {
+      "source": "",
+      "text": ""
+    }
+  }
+]
+```
+
+## OUTPUT GENERATION RULES
+
+1. **Always include all 4 complexity levels** in the array (High, Moderate, Low, Straightforward)
+2. **Set "checked": true** for ALL levels that meet requirements 
+3. **Set "checked": false** for levels that don't qualify
+4. **Use sequential IDs**: data-high-1, data-moderate-1, data-low-1, data-straightforward-1
+5. **AMA_reference field**: Briefly state which categories were met or why not applicable
+6. **Justification field**: Provide detailed explanation with specific element counts
+7. **Reference fields**: Use actual documentation source and relevant text excerpt
+
+## CRITICAL REMINDERS
+1. **NO PARTIAL CREDIT**: 2 out of 3 required elements = Category 1 DOES NOT QUALIFY
+2. **COUNT ALL LEVELS**: A case can qualify for multiple levels simultaneously
+3. **EXPLICIT DOCUMENTATION ONLY**: "Patient had prior workup" ≠ "Reviewed external cardiology note from Dr. Smith dated 1/15/24"
+4. **UNIQUE SOURCES/TESTS ONLY**: Multiple CBCs = 1 test type
+
+'''
