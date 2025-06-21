@@ -267,3 +267,177 @@ List ALL levels that meet requirements, with highest level first.
 3. **EXPLICIT DOCUMENTATION ONLY**: "Patient had prior workup" ≠ "Reviewed external cardiology note from Dr. Smith dated 1/15/24"
 4. **UNIQUE SOURCES/TESTS ONLY**: Multiple CBCs = 1 test type
 '''
+
+
+
+Data_review_prompt_3 = '''
+
+# Information Extraction for MDM Data Management
+
+**Role**: You are a medical coding expert analyzing a patient's medical record to extract specific details for MDM level calculation under AMA guidelines.
+
+**Task**: Identify and list ONLY the following elements from the medical record:
+
+## **1. Lab Orders Placed**
+* **Definition**: Tests ordered during the encounter (e.g., blood tests, imaging)
+* **Extract**: List each **unique test ordered** (e.g., "CBC," "Lipid Panel," "CT Chest")
+* **Note**: Ignore duplicates (e.g., 2x CBC = 1 unique test)
+
+## **2. Results Reviewed**
+* **Definition**: Results of tests **reviewed** during the encounter (e.g., lab results, imaging reports)
+* **Extract**: List each **unique test reviewed** (e.g., "Genetic Test BRCA1," "COVID-19 PCR Result")
+
+## **3. Independent Interpretations**
+* **Definition**: Tests where the provider **personally analyzed raw data** (e.g., EKG tracings, biopsy slides) instead of relying solely on another clinician's report
+* **Extract**: List tests with **explicit documentation** of independent interpretation (e.g., "I reviewed the MRI images myself")
+
+## **4. External Data Reviewed**
+* **Definition**: Data obtained from **external sources** (e.g., records from another hospital, specialist consult notes)
+* **Extract**: List each **unique external source** (e.g., "Dr. Smith's Cardiology Report," "ABC Lab Records")
+
+## **5. Independent Historian**
+* **Definition**: History obtained from a **family/caregiver source** (e.g., paramedic, social worker) due to patient incapacity
+* **Extract**: State 'true' if present (with role, e.g., "EMT history"), else 'false'
+
+## **6. Discussion of Management or Test Interpretation**
+* **Definition**: Discussion of management or test interpretation with external physician/other qualified health care professional/appropriate source (not separately reported)
+* **Extract**: List discussions with external sources (e.g., "Consulted with Dr. Jones regarding treatment plan," "Discussed imaging results with radiologist")
+
+---
+
+## **Output Format Requirements**
+Return a **strict JSON object** with these keys:
+
+```json
+{
+  "data_review_components": {
+    "elements": {
+      "lab_orders_placed": {
+        "items": ["test1", "test2", "..."],
+        "count": 2,
+        "details": ["CBC ordered for anemia workup", "Lipid panel ordered for cardiovascular risk"]
+      },
+      "results_reviewed": {
+        "items": ["test1", "test2", "..."],
+        "count": 3,
+        "details": ["CBC results from 01/15 showing WBC 12.5", "Chest X-ray report reviewed", "Prior genetic test OncoType DX reviewed"]
+      },
+      "independent_interpretations": {
+        "items": ["test1", "test2", "..."],
+        "count": 1,
+        "details": ["EKG strips interpreted directly by provider"]
+      },
+      "external_data_reviewed": {
+        "items": ["source1", "source2", "..."],
+        "count": 2,
+        "details": ["City Hospital discharge summary reviewed", "Dr. Smith cardiology consult note from 01/10 reviewed"]
+      },
+      "independent_historian": {
+        "present": "true/false",
+        "details": "EMS provided history due to patient altered mental status",
+        "source": "EMS"
+      },
+      "discussion_of_management": {
+        "items": ["discussion1", "discussion2", "..."],
+        "count": 1,
+        "details": ["Discussed treatment plan with Dr. Johnson (cardiology) via phone"]
+      }
+    },
+    "category_analysis": {
+      "category_1_elements": {
+        "external_notes": 2,
+        "test_results": 3,
+        "tests_ordered": 2,
+        "independent_historian": 1,
+        "total_category_1": 8,
+        "meets_high_moderate_threshold": true,
+        "meets_low_threshold": true
+      },
+      "category_2_elements": {
+        "independent_interpretations": 1,
+        "meets_threshold": true
+      },
+      "category_3_elements": {
+        "external_discussions": 1,
+        "meets_threshold": true
+      }
+    }
+  }
+}
+```
+
+---
+
+## **Example**
+
+**Medical Record Snippet**:
+"Ordered CBC and liver enzymes. Reviewed prior genetic test (OncoType DX) and chest X-ray from City Hospital. Also reviewed today's urinalysis results and yesterday's BNP level. Interpreted EKG strips directly. History obtained from EMS due to patient confusion. Discussed treatment plan with Dr. Martinez (cardiology) regarding medication adjustments."
+
+**Output**:
+```json
+{
+  "data_review_components": {
+    "elements": {
+      "lab_orders_placed": {
+        "items": ["CBC", "Liver Enzymes"],
+        "count": 2,
+        "details": ["CBC ordered for complete blood count", "Liver enzymes ordered for hepatic function assessment"]
+      },
+      "results_reviewed": {
+        "items": ["OncoType DX", "Chest X-ray", "Urinalysis", "BNP"],
+        "count": 4,
+        "details": ["OncoType DX genetic test results reviewed", "Chest X-ray from City Hospital reviewed", "Today's urinalysis results reviewed", "Yesterday's BNP level reviewed"]
+      },
+      "independent_interpretations": {
+        "items": ["EKG Strips"],
+        "count": 1,
+        "details": ["EKG strips interpreted directly by provider"]
+      },
+      "external_data_reviewed": {
+        "items": ["City Hospital Records"],
+        "count": 1,
+        "details": ["City Hospital chest X-ray records reviewed"]
+      },
+      "independent_historian": {
+        "present": "true",
+        "details": "History obtained from EMS due to patient confusion",
+        "source": "EMS"
+      },
+      "discussion_of_management": {
+        "items": ["Dr. Martinez Cardiology Consultation"],
+        "count": 1,
+        "details": ["Discussed treatment plan with Dr. Martinez (cardiology) regarding medication adjustments"]
+      }
+    },
+    "category_analysis": {
+      "category_1_elements": {
+        "external_notes": 1,
+        "test_results": 4,
+        "tests_ordered": 2,
+        "independent_historian": 1,
+        "total_category_1": 8,
+        "meets_high_moderate_threshold": true,
+        "meets_low_threshold": true
+      },
+      "category_2_elements": {
+        "independent_interpretations": 1,
+        "meets_threshold": true
+      },
+      "category_3_elements": {
+        "external_discussions": 1,
+        "meets_threshold": true
+      }
+    }
+  }
+}
+```
+
+## **Critical Instructions**
+1. **Count each unique item only once** - multiple CBCs = 1 count
+2. **Provide specific details** for each item to support MDM evaluation
+3. **Include category analysis** to help with threshold determination
+4. **Be explicit about external sources** - distinguish from internal records
+5. **Only count what is explicitly documented** - no assumptions or implications
+
+
+'''
